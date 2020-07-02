@@ -4,7 +4,7 @@ set -e
 
 function usage()
 {
-    echo "$0 --project_id=<project_id
+    echo "$0 --project=<project_id>
     --backend=<backend>
     --logstash_host=<logstash_host>
     --organization=<organization>
@@ -15,7 +15,7 @@ function usage()
     [--sec_rule_engine=DetectionOnly|On]"
 }
 
-if ! opts=$(getopt -l "project_id:,backend:,fqdn:,logstash_host:,organization:,grpc_url:,\
+if ! opts=$(getopt -l "project:,backend:,fqdn:,logstash_host:,organization:,grpc_url:,\
 username:,password:,paranoia::,sec_rule_engine::" -o "p:,b:,d:,l:,o:,g:,u:,w:" -- "${@}")
 then
     echo "Terminating..." >&2
@@ -38,7 +38,7 @@ SEC_RULE_ENGINE=DetectionOnly
 while [ -n "${1}" ]
 do
     case "${1}" in
-        -p | --project_id ) PROJECT_ID="${2}"; shift 2 ;;
+        -p | --project ) PROJECT_ID="${2}"; shift 2 ;;
         -b | --backend ) BACKEND="${2}"; shift 2 ;;
         -d | --fqdn ) FQDN="${2}"; shift 2 ;;
         -l | --logstash_host ) LOGSTASH_HOST="${2}"; shift 2 ;;
