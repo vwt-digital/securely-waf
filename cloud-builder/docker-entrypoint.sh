@@ -16,7 +16,7 @@ function usage()
 }
 
 if ! opts=$(getopt -l "project:,backend:,fqdn:,logstash_host:,organization:,grpc_url:,\
-username:,password:,paranoia::,sec_rule_engine::" -o "p:,b:,d:,l:,o:,g:,u:,w:" -- "${@}")
+username:,password:,paranoia::,sec_rule_engine::,skip_domain_mapping" -o "p:,b:,d:,l:,o:,g:,u:,w:,s" -- "${@}")
 then
     echo "Terminating..." >&2
     exit 1
@@ -34,6 +34,7 @@ USERNAME=
 PASSWORD=
 PARANOIA=2
 SEC_RULE_ENGINE=DetectionOnly
+DO_DOMAIN_MAPPING=1
 
 while [ -n "${1}" ]
 do
@@ -46,6 +47,7 @@ do
         -g | --grpc_url ) GRPC_URL="${2}"; shift 2 ;;
         -u | --username ) USERNAME="${2}"; shift 2 ;;
         -w | --password ) PASSWORD="${2}"; shift 2 ;;
+        -s | --skip_domain_mapping ) DO_DOMAIN_MAPPING=0; shift ;;
         --paranoia ) PARANOIA="${2}"; shift 2 ;;
         --sec_rule_engine ) SEC_RULE_ENGINE="${2}"; shift 2 ;;
         -- ) break ;;
@@ -99,3 +101,21 @@ gcloud run deploy securely-waf \
     --set-env-vars="PARANOIA=${PARANOIA}" \
     --set-env-vars="SEC_RULE_ENGINE=${SEC_RULE_ENGINE}"
 
+if [ ${DO_DOMAIN_MAPPING} -eq 1 ]
+then
+    for _DOMAIN in ${FQDN//,/ }
+    do
+        if ! echo "${_DOMAIN}" | grep -e "\.appspot\.com$" -e "\.run\.app$"
+        then
+            gcloud beta run domain-mappings list --filter="${_DOMAIN}" \
+              --platform="managed" \
+              --region="europe-west1" \
+              --project="${PROJECT_ID}" | grep "${_DOMAIN}\s*securely-waf " ||
+            gcloud beta run domain-mappings create --service="securely-waf" \
+              --platform="managed" \
+              --region="europe-west1" \
+              --domain="${_DOMAIN}" \
+              --project="${PROJECT_ID}"
+        fi
+    done
+fi
