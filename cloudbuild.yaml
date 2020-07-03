@@ -1,0 +1,64 @@
+---
+timeout: 1200s
+steps:
+  # Build WAF image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-waf'
+    args: ['build', '-t', 'eu.gcr.io/$PROJECT_ID/securely-waf', '.']
+
+  # Push the WAF image.
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-waf'
+    waitFor: ['build-waf']
+    args: ['push', 'eu.gcr.io/$PROJECT_ID/securely-waf']
+
+  # Only keep the 10 most recent images
+  - name: 'gcr.io/cloud-builders/gcloud-slim'
+    waitFor: ['push-waf']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -eou pipefail
+        for digest in $(gcloud container images list-tags eu.gcr.io/$PROJECT_ID/securely-waf --limit=99999 \
+            --sort-by=TIMESTAMP --format='get(digest)' | head -n-10); do
+          gcloud container images delete -q --force-delete-tags "eu.gcr.io/$PROJECT_ID/securely-waf@$${digest}"
+        done
+
+  # Build WAF cloud-builder image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-cloud-builder-waf'
+    waitFor: ['-']
+    args: ['build',
+           '--build-arg', 'LOGSTASH_HOST=${_LOGSTASH_HOST}',
+           '--build-arg', 'GRPC_URL=${_GRPC_URL}',
+           '--build-arg', 'ELASTIC_USERNAME=${_ELASTIC_USERNAME}',
+           '--build-arg', 'ELASTIC_PASSWORD=${_ELASTIC_PASSWORD}',
+           '-t', 'eu.gcr.io/$PROJECT_ID/cloud-builder-waf',
+           '.']
+    dir: 'cloud-builder'
+
+  # Push the WAF cloud-builder image.
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-cloud-builder-waf'
+    waitFor: ['build-cloud-builder-waf']
+    args: ['push', 'eu.gcr.io/$PROJECT_ID/cloud-builder-waf']
+
+  # Only keep the 10 most recent images
+  - name: 'gcr.io/cloud-builders/gcloud-slim'
+    waitFor: ['push-cloud-builder-waf']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -eou pipefail
+        for digest in $(gcloud container images list-tags eu.gcr.io/$PROJECT_ID/cloud-builder-waf --limit=99999 \
+            --sort-by=TIMESTAMP --format='get(digest)' | head -n-10); do
+          gcloud container images delete -q --force-delete-tags "eu.gcr.io/$PROJECT_ID/cloud-builder-waf@$${digest}"
+        done
+
+substitutions:
+  _LOGSTASH_HOST: ""
+  _GRPC_URL: ""
+  _ELASTIC_USERNAME: ""
+  _ELASTIC_PASSWORD: ""
