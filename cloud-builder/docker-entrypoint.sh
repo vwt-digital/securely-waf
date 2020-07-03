@@ -24,16 +24,15 @@ fi
 
 eval set -- "${opts}"
 
-PROJECT_ID=
-BACKEND=
-FQDN=
-LOGSTASH_HOST=
-ORGANIZATION=
-GRPC_URL=
-USERNAME=
-PASSWORD=
-PARANOIA=2
-SEC_RULE_ENGINE=DetectionOnly
+if [ -z "${PARANOIA}" ]
+then
+    PARANOIA=2
+fi
+if [ -z "${SEC_RULE_ENGINE}" ]
+then
+    SEC_RULE_ENGINE=DetectionOnly
+fi
+
 DO_DOMAIN_MAPPING=1
 
 while [ -n "${1}" ]

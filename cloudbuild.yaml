@@ -29,7 +29,13 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     id: 'build-cloud-builder-waf'
     waitFor: ['-']
-    args: ['build', '-t', 'eu.gcr.io/$PROJECT_ID/cloud-builder-waf', '.']
+    args: ['build',
+           '--build-arg', 'LOGSTASH_HOST=${_LOGSTASH_HOST}',
+           '--build-arg', 'GRPC_URL=${_GRPC_URL}',
+           '--build-arg', 'ELASTIC_USERNAME=${_ELASTIC_USERNAME}',
+           '--build-arg', 'ELASTIC_PASSWORD=${_ELASTIC_PASSWORD}',
+           '-t', 'eu.gcr.io/$PROJECT_ID/cloud-builder-waf',
+           '.']
     dir: 'cloud-builder'
 
   # Push the WAF cloud-builder image.
@@ -50,3 +56,9 @@ steps:
             --sort-by=TIMESTAMP --format='get(digest)' | head -n-10); do
           gcloud container images delete -q --force-delete-tags "eu.gcr.io/$PROJECT_ID/cloud-builder-waf@$${digest}"
         done
+
+substitutions:
+  _LOGSTASH_HOST: ""
+  _GRPC_URL: ""
+  _ELASTIC_USERNAME: ""
+  _ELASTIC_PASSWORD: ""
