@@ -57,6 +57,12 @@ do
     esac
 done
 
+if [ -z "${SECURELY_WAF_IMAGE_SOURCE}" ]
+then
+    echo "Please define SECURELY_WAF_IMAGE_SOURCE to the securely waf source container image"
+    exit 1
+fi
+
 if [ -z "${PROJECT_ID}" ] || [ -z "${BACKEND}" ] || [ -z "${FQDN}" ] || [ -z "${LOGSTASH_HOST}" ] || \
     [ -z "${ORGANIZATION}" ] || [ -z "${GRPC_URL}" ] || [ -z "${USERNAME}" ] || [ -z "${PASSWORD}" ]
 then
@@ -69,8 +75,8 @@ echo "Deploying securely-waf to ${PROJECT_ID}..."
 
 # Pull from source repo and push to current project's repo
 # (required for Cloud Run service agent to be able to read the image)
-docker pull "eu.gcr.io/vwt-d-gew1-dat-securely/securely-waf"
-docker tag "eu.gcr.io/vwt-d-gew1-dat-securely/securely-waf" "eu.gcr.io/${PROJECT_ID}/securely-waf"
+docker pull "${SECURELY_WAF_IMAGE_SOURCE}"
+docker tag "${SECURELY_WAF_IMAGE_SOURCE}" "eu.gcr.io/${PROJECT_ID}/securely-waf"
 docker push "eu.gcr.io/${PROJECT_ID}/securely-waf"
 
 # Remove old (more than 10) images in container registry

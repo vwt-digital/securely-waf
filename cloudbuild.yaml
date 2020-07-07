@@ -34,6 +34,7 @@ steps:
            '--build-arg', 'GRPC_URL=${_GRPC_URL}',
            '--build-arg', 'ELASTIC_USERNAME=${_ELASTIC_USERNAME}',
            '--build-arg', 'ELASTIC_PASSWORD=${_ELASTIC_PASSWORD}',
+           '--build-arg', 'SECURELY_WAF_IMAGE_SOURCE=eu.gcr.io/${PROJECT_ID}/securely-waf',
            '-t', 'eu.gcr.io/$PROJECT_ID/cloud-builder-waf',
            '.']
     dir: 'cloud-builder'
