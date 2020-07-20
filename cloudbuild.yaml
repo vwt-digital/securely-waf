@@ -4,7 +4,7 @@ steps:
   # Generate client certificate
   - name: 'gcr.io/cloud-builders/docker'
     entrypoint: 'bash'
-    id: 'build-waf'
+    id: 'generate-certificates'
     args:
       - '-c'
       - |
