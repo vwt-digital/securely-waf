@@ -29,6 +29,8 @@ COPY filebeat/filebeat.yml /etc/filebeat/filebeat.yml
 COPY httpd-virtualhost.tpl /etc/apache2/conf/
 COPY httpd.conf /etc/apache2/conf/httpd.conf
 
+COPY ca.pem securely-waf.key.pem securely-waf.crt /etc/securely-certs/
+
 COPY lua /usr/local/bin/apache2
 RUN chown -R www-data /usr/local/bin/apache2/*
 
