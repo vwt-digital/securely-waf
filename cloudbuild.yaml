@@ -1,6 +1,21 @@
 ---
 timeout: 1200s
 steps:
+  # Generate client certificate
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    id: 'generate-certificates'
+    args:
+      - '-c'
+      - |
+        gcloud secrets versions access latest --secret="${PROJECT_ID}-ca-cert" > ca.pem &&
+        gcloud secrets versions access latest --secret="${PROJECT_ID}-ca-key" > ca.key.pem &&
+        openssl genrsa -out securely-waf.key.pem 2048 &&
+        openssl req -subj "/CN=Securely WAF Client ${BRANCH_NAME}" -extensions v3_req -sha256 \
+            -new -key securely-waf.key.pem -out securely-waf.csr
+        openssl x509 -req -extensions v3_req -days 3650 -sha256 -in securely-waf.csr -CA ca.pem \
+            -CAkey ca.key.pem -CAcreateserial -out securely-waf.crt
+
   # Build WAF image
   - name: 'gcr.io/cloud-builders/docker'
     id: 'build-waf'
