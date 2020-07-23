@@ -30,6 +30,8 @@ COPY httpd-virtualhost.tpl /etc/apache2/conf/
 COPY httpd.conf /etc/apache2/conf/httpd.conf
 
 COPY ca.pem securely-waf.key.pem securely-waf.crt /etc/securely-certs/
+COPY ca.pem /usr/local/share/ca-certificates/securely-ca.crt
+RUN update-ca-certificates
 
 COPY lua /usr/local/bin/apache2
 RUN chown -R www-data /usr/local/bin/apache2/*
