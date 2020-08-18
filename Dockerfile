@@ -1,8 +1,6 @@
-FROM alpine
+FROM registry.securely.ai/securely/common/blocker
 RUN apk add curl
-RUN curl -L -o securely-blocker.zip 'https://git.securely.ai/securely/common/blocker/-/jobs/artifacts/master/download?job=compile' && \
-    unzip securely-blocker.zip && \
-    rm securely-blocker.zip
+RUN cp /app /securely-blocker
 
 RUN curl -L -O https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-7.5.0-amd64.deb
 
