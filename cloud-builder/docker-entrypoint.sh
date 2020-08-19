@@ -12,11 +12,12 @@ function usage()
     --username=<username>
     --password=<password>
     [--paranoia=<paranoia>]
-    [--sec_rule_engine=DetectionOnly|On]"
+    [--sec_rule_engine=DetectionOnly|On]
+    [--additional_ca_cert=<ca-cert.crt>]"
 }
 
 if ! opts=$(getopt -l "project:,backend:,fqdn:,logstash_host:,organization:,grpc_url:,\
-username:,password:,paranoia::,sec_rule_engine::,skip_domain_mapping" -o "p:,b:,d:,l:,o:,g:,u:,w:,s" -- "${@}")
+username:,password:,paranoia::,sec_rule_engine::,skip_domain_mapping,additional_ca_cert::" -o "p:,b:,d:,l:,o:,g:,u:,w:,s" -- "${@}")
 then
     echo "Terminating..." >&2
     exit 1
@@ -49,6 +50,7 @@ do
         -s | --skip_domain_mapping ) DO_DOMAIN_MAPPING=0; shift ;;
         --paranoia ) PARANOIA="${2}"; shift 2 ;;
         --sec_rule_engine ) SEC_RULE_ENGINE="${2}"; shift 2 ;;
+        --additional_ca_cert ) ADDITIONAL_CA_CERT="${ADDITIONAL_CA_CERT} ${2}"; shift 2 ;;
         -- ) break ;;
         *) echo "Unrecognized argument ${1}"
            usage
@@ -76,7 +78,20 @@ echo "Deploying securely-waf to ${PROJECT_ID}..."
 # Pull from source repo and push to current project's repo
 # (required for Cloud Run service agent to be able to read the image)
 docker pull "${SECURELY_WAF_IMAGE_SOURCE}"
-docker tag "${SECURELY_WAF_IMAGE_SOURCE}" "eu.gcr.io/${PROJECT_ID}/securely-waf"
+if [ -n "${ADDITIONAL_CA_CERT}" ]
+then
+    mkdir -p waf_with_ca_cert
+    cp ${ADDITIONAL_CA_CERT} waf_with_ca_cert/
+    pushd waf_with_ca_cert
+    echo "FROM ${SECURELY_WAF_IMAGE_SOURCE}
+COPY ${ADDITIONAL_CA_CERT} /usr/local/share/ca-certificates/
+RUN update-ca-certificates" > Dockerfile
+    docker build -t "eu.gcr.io/${PROJECT_ID}/securely-waf" .
+    popd
+else
+    docker tag "${SECURELY_WAF_IMAGE_SOURCE}" "eu.gcr.io/${PROJECT_ID}/securely-waf"
+fi
+
 docker push "eu.gcr.io/${PROJECT_ID}/securely-waf"
 
 # Remove old (more than 10) images in container registry
