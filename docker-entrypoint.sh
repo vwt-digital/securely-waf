@@ -247,4 +247,4 @@ if [[ -v SECURELY ]]; then
   /usr/local/securely-blocker -file /etc/securely-blocker-db -file_post_command "test -f /var/run/apache.pid && $* -k graceful $APACHE_ARGUMENTS" &
 fi && \
 
-exec "$@" $APACHE_ARGUMENTS
+exec "$@" $APACHE_ARGUMENTS | grep -v -e "should have been dropped, but couldn't as state is not finished" -e "error retrieving process stats"
