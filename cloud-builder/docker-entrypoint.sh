@@ -109,7 +109,7 @@ gcloud run deploy securely-waf \
     --region=europe-west1 \
     --allow-unauthenticated \
     --platform=managed \
-    --memory=256Mi \
+    --memory=1024Mi \
     --set-env-vars="^--^BACKEND=${BACKEND}" \
     --set-env-vars="^--^FQDN=${FQDN}" \
     --set-env-vars="FILEBEAT=1" \
