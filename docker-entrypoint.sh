@@ -233,13 +233,21 @@ if [[ -v STDOUT ]]; then
       -e 's!^(\s*SecAuditLog)\s+\S+!\1 /proc/self/fd/1!g' \
       "/etc/modsecurity.d/modsecurity.conf"
 elif [ -v FILEBEAT ]; then
+  FILEBEAT_PIPE=/tmp/filebeat_pipe
+
+  if [[ ! -p $FILEBEAT_PIPE ]]; then
+    mkfifo $FILEBEAT_PIPE
+  fi
+
+  cat < $FILEBEAT_PIPE | grep -v -e "State" -e "error retrieving process stats" &
+
   sed -ri \
-      -e 's!^(\s*CustomLog)\s+\S+!\1 "|/usr/bin/filebeat -e -E FILEBEAT_MODULE=apache -E FILEBEAT_DATASET=apache.access -path.data /tmp/filebeat-apache-access" !g' \
-      -e 's!^(\s*ErrorLog)\s+\S+!\1 "|/usr/bin/filebeat -e -E FILEBEAT_MODULE=apache -E FILEBEAT_DATASET=apache.error -path.data /tmp/filebeat-apache-error" !g' \
-      -e 's!^(\s*TransferLog)\s+\S+!\1 "|/usr/bin/filebeat -e -E FILEBEAT_MODULE=apache -E FILEBEAT_DATASET=apache.transfer -path.data /tmp/filebeat-apache-transfer" !g' \
+      -e 's!^(\s*CustomLog)\s+\S+!\1 "|$/usr/bin/filebeat -e -E FILEBEAT_MODULE=apache -E FILEBEAT_DATASET=apache.access -path.data /tmp/filebeat-apache-access-$(date +%s%3N) 2>/tmp/filebeat_pipe" !g' \
+      -e 's!^(\s*ErrorLog)\s+\S+!\1 "|$/usr/bin/filebeat -e -E FILEBEAT_MODULE=apache -E FILEBEAT_DATASET=apache.error -path.data /tmp/filebeat-apache-error-$(date +%s%3N) 2>/tmp/filebeat_pipe" !g' \
+      -e 's!^(\s*TransferLog)\s+\S+!\1 "|$/usr/bin/filebeat -e -E FILEBEAT_MODULE=apache -E FILEBEAT_DATASET=apache.transfer -path.data /tmp/filebeat-apache-transfer-$(date +%s%3N) 2>/tmp/filebeat_pipe" !g' \
       "/etc/apache2/conf/httpd.conf" &&
   sed -ri \
-      -e 's!^(\s*SecAuditLog)\s+\S+!\1 "|/usr/bin/filebeat -e -E FILEBEAT_MODULE=modsecurity -E FILEBEAT_DATASET=modsecurity.json -path.data /tmp/filebeat-modsecurity" !g' \
+      -e 's!^(\s*SecAuditLog)\s+\S+!\1 "|$/usr/bin/filebeat -e -E FILEBEAT_MODULE=modsecurity -E FILEBEAT_DATASET=modsecurity.json -path.data /tmp/filebeat-modsecurity-$(date +%s%3N) 2>/tmp/filebeat_pipe" !g' \
       "/etc/modsecurity.d/modsecurity.conf"
 fi && \
 
@@ -247,4 +255,4 @@ if [[ -v SECURELY ]]; then
   /usr/local/securely-blocker -file /etc/securely-blocker-db -file_post_command "test -f /var/run/apache.pid && $* -k graceful $APACHE_ARGUMENTS" &
 fi && \
 
-exec "$@" $APACHE_ARGUMENTS | grep -v -e "should have been dropped, but couldn't as state is not finished" -e "error retrieving process stats"
+exec "$@" $APACHE_ARGUMENTS

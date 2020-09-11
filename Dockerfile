@@ -2,7 +2,7 @@ FROM registry.securely.ai/securely/common/blocker
 RUN apk add curl
 RUN cp /app /securely-blocker
 
-RUN curl -L -O https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-7.5.0-amd64.deb
+RUN curl -L -O https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-7.9.1-amd64.deb
 
 FROM owasp/modsecurity-crs:v3.2-modsec2-apache
 LABEL maintainer="franziska.buehler@owasp.org"
@@ -11,8 +11,8 @@ ENV SEC_RULE_ENGINE On
 COPY --from=0 securely-blocker /usr/local/
 RUN touch /etc/securely-blocker-db
 
-COPY --from=0 filebeat-7.5.0-amd64.deb /
-RUN dpkg -i /filebeat-7.5.0-amd64.deb && rm /filebeat-7.5.0-amd64.deb
+COPY --from=0 filebeat-*.deb /
+RUN dpkg -i /filebeat-*.deb && rm /filebeat-*.deb
 RUN apt-get update && apt-get install \
       lua-socket && \
     rm -rf /var/lib/apt/lists/*
