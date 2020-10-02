@@ -13,6 +13,7 @@ function usage()
     --password=<password>
     [--paranoia=<paranoia>]
     [--sec_rule_engine=DetectionOnly|On]
+    [--skip_domain_mapping]
     [--additional_ca_cert=<ca-cert.crt>]"
 }
 
