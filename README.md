@@ -7,7 +7,10 @@ The goal is to provide a fully functional CRS in your serverless environment:
 * The Core Rule Set can be configured using Environment variables.
 * It's configuration is managed using your Kibana dashboard.
 
-  
+A Google Cloud Builder image is available for easy deployment from your Cloud Build pipeline on the Google Cloud Platform. The resulting setup is shown in the diagram below.
+![Diagram showing WAF protecting API deployment](waf_protecting_api.png "Deployment of WAF protecting API")
+More information on the Cloud Builder deployment can be found [here](cloud-builder).
+
 ## Configuration
 
 ### Backend Services (Upstream)
@@ -190,4 +193,4 @@ This effect can be reduced by shipping logs to stdout / stderr with the STDOUT e
 
 #### Securely-blocker
 Due to the severe CPU constraints before a request is processed, the blocks that are loaded in the Apache memory might not be up to date. This leads to false negatives and false positives.
-This behavior is partially mitigated with fast apache graceful reloading. 
+This behavior is partially mitigated with fast apache graceful reloading.

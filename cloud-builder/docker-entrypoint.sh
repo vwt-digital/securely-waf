@@ -13,6 +13,7 @@ function usage()
     --password=<password>
     [--paranoia=<paranoia>]
     [--sec_rule_engine=DetectionOnly|On]
+    [--skip_domain_mapping]
     [--additional_ca_cert=<ca-cert.crt>]"
 }
 
@@ -116,6 +117,7 @@ gcloud run deploy securely-waf \
     --set-env-vars="LOGSTASH_HOST=${LOGSTASH_HOST}" \
     --set-env-vars="ORGANIZATION=${ORGANIZATION}" \
     --set-env-vars="GRPC_URL=${GRPC_URL}" \
+    --set-env-vars="TLS=true" \
     --set-env-vars="USERNAME=${USERNAME}" \
     --set-env-vars="PASSWORD=${PASSWORD}" \
     --set-env-vars="PARANOIA=${PARANOIA}" \
