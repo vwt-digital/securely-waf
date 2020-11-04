@@ -49,11 +49,12 @@ function update_jwt_cache(upstream)
     print("INFO getting new JWT token for service " .. upstream)
     local token = get_token(upstream)
 
-    jwt_cache[upstream] = {}
-    jwt_cache[upstream].token = token
-    jwt_cache[upstream].payload = get_jwt_payload(token)
+    jwt_cache_entry = {}
+    jwt_cache_entry.token = token
+    jwt_cache_entry.payload = get_jwt_payload(token)
+    jwt_cache[upstream] = jwt_cache_entry
 
-    print("INFO JWT token for service " .. upstream .. " refreshed untill " .. jwt_cache[upstream].payload.exp)
+    print("INFO JWT token for service " .. upstream .. " refreshed until " .. jwt_cache[upstream].payload.exp)
 end
 
 function authenticate(r)
