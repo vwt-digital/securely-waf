@@ -117,6 +117,7 @@ gcloud run deploy securely-waf \
     --set-env-vars="LOGSTASH_HOST=${LOGSTASH_HOST}" \
     --set-env-vars="ORGANIZATION=${ORGANIZATION}" \
     --set-env-vars="GRPC_URL=${GRPC_URL}" \
+    --set-env-vars="SECURELY=true" \
     --set-env-vars="TLS=true" \
     --set-env-vars="USERNAME=${USERNAME}" \
     --set-env-vars="PASSWORD=${PASSWORD}" \
