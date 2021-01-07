@@ -252,7 +252,7 @@ elif [ -v FILEBEAT ]; then
 fi && \
 
 if [[ -v SECURELY ]]; then
-  /usr/local/securely-blocker -file /etc/securely-blocker-db -file_post_command "test -f /var/run/apache.pid && $* -k graceful $APACHE_ARGUMENTS" &
+  /usr/local/securely-blocker -file /etc/securely-blocker-db -file_post_command "test -f /var/run/apache.pid && $* -k graceful $APACHE_ARGUMENTS || true" &
 fi && \
 
 exec "$@" $APACHE_ARGUMENTS

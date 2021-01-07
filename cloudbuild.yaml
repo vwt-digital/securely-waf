@@ -45,7 +45,6 @@ steps:
     id: 'build-cloud-builder-waf'
     waitFor: ['-']
     args: ['build',
-           '--build-arg', 'LOGSTASH_HOST=${_LOGSTASH_HOST}',
            '--build-arg', 'GRPC_URL=${_GRPC_URL}',
            '--build-arg', 'ELASTIC_USERNAME=${_ELASTIC_USERNAME}',
            '--build-arg', 'ELASTIC_PASSWORD=${_ELASTIC_PASSWORD}',

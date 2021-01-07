@@ -6,11 +6,10 @@ function usage()
 {
     echo "$0 --project=<project_id>
     --backend=<backend>
-    --logstash_host=<logstash_host>
-    --organization=<organization>
     --grpc_url=<grpc_url>
     --username=<username>
     --password=<password>
+    [--logstash_host=<logstash_host> --organization=<organization>]
     [--paranoia=<paranoia>]
     [--sec_rule_engine=DetectionOnly|On]
     [--skip_domain_mapping]
@@ -66,12 +65,26 @@ then
     exit 1
 fi
 
-if [ -z "${PROJECT_ID}" ] || [ -z "${BACKEND}" ] || [ -z "${FQDN}" ] || [ -z "${LOGSTASH_HOST}" ] || \
-    [ -z "${ORGANIZATION}" ] || [ -z "${GRPC_URL}" ] || [ -z "${USERNAME}" ] || [ -z "${PASSWORD}" ]
+if [ -z "${PROJECT_ID}" ] || [ -z "${BACKEND}" ] || [ -z "${FQDN}" ] ||
+    [ -z "${GRPC_URL}" ] || [ -z "${USERNAME}" ] || [ -z "${PASSWORD}" ]
 then
     echo "Missing required arguments" >&2
     usage
     exit 1
+fi
+
+if [ -n "${LOGSTASH_HOST}" ]
+then
+    if [ -z "${ORGANIZATION}" ]
+    then
+        echo "When using filebeat by specifying LOGSTASH_HOST then ORGANIZATION is a required argument" >&2
+        usage
+        exit 1
+    fi
+
+    output_env_vars="FILEBEAT=1,LOGSTASH_HOST=${LOGSTASH_HOST},ORGANIZATION=${ORGANIZATION},GRPC_URL=${GRPC_URL}"
+else
+    output_env_vars="GRPC_URL=${GRPC_URL}"  # Implies output on /var/log, to be picked-up by Stackdriver from Cloud Run
 fi
 
 echo "Deploying securely-waf to ${PROJECT_ID}..."
@@ -113,10 +126,8 @@ gcloud run deploy securely-waf \
     --memory=1024Mi \
     --set-env-vars="^--^BACKEND=${BACKEND}" \
     --set-env-vars="^--^FQDN=${FQDN}" \
-    --set-env-vars="FILEBEAT=1" \
-    --set-env-vars="LOGSTASH_HOST=${LOGSTASH_HOST}" \
-    --set-env-vars="ORGANIZATION=${ORGANIZATION}" \
-    --set-env-vars="GRPC_URL=${GRPC_URL}" \
+    --set-env-vars="${output_env_vars}" \
+    --set-env-vars="SECURELY=true" \
     --set-env-vars="TLS=true" \
     --set-env-vars="USERNAME=${USERNAME}" \
     --set-env-vars="PASSWORD=${PASSWORD}" \
