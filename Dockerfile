@@ -13,7 +13,8 @@ RUN touch /etc/securely-blocker-db
 
 COPY --from=0 filebeat-*.deb /
 RUN dpkg -i /filebeat-*.deb && rm /filebeat-*.deb
-RUN apt-get update && apt-get install \
+RUN apt-get update && apt-get --yes install \
+      curl \
       lua-socket && \
     rm -rf /var/lib/apt/lists/*
 
@@ -34,7 +35,7 @@ RUN update-ca-certificates
 COPY lua /usr/local/bin/apache2
 RUN chown -R www-data /usr/local/bin/apache2/*
 
-COPY docker-entrypoint.sh /
+COPY getsecret.py docker-entrypoint.sh /
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["apachectl", "-f", "/etc/apache2/conf/httpd.conf", "-D", "FOREGROUND"]

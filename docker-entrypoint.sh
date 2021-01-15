@@ -12,6 +12,20 @@ set -a
 : ${SEC_RULE_ENGINE:=On}
 set +a
 
+# Check if password should be retrieved from Secret Manager
+if echo "${PASSWORD}" | grep -q "^secret:"
+then
+    secret_version=$(echo "${PASSWORD}" | cut -d: -f2-) &&
+    echo "Getting password from ${secret_version}" &&
+    scopes="https://www.googleapis.com/auth/cloud-platform" &&
+    gcp_token=$(curl -H "Metadata-Flavor: Google" \
+      "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token?scopes=${scopes}") &&
+    secret_value=$(curl -H "Authorization: Bearer ${gcp_token}" \
+        "https://secretmanager.googleapis.com/v1/${secret_version}:access" | python /getsecret.py) &&
+    export PASSWORD="${secret_value}" &&
+    echo "Password successfully retrieved from ${secret_version}"
+fi && \
+
 # Paranoia Level
 $(python <<EOF
 import re
