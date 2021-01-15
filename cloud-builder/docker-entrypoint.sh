@@ -6,6 +6,7 @@ function usage()
 {
     echo "$0 --project=<project_id>
     --backend=<backend>
+    --fqdn=<fully qualified domain name>
     --grpc_url=<grpc_url>
     --username=<username>
     --password=<password>
@@ -114,6 +115,42 @@ for digest in $(gcloud container images list-tags "eu.gcr.io/${PROJECT_ID}/secur
   gcloud container images delete -q --force-delete-tags "eu.gcr.io/${PROJECT_ID}/securely-waf@${digest}"
 done
 
+# Determine service account to use for Cloud Run WAF container
+cloud_run_service_account=$(gcloud iam service-accounts list --project="${PROJECT_ID}" --format="get(email)" |
+    grep -e "^back-end-gsa@" -e "^[0-9]*-compute@" | sort | tail -n1)
+
+if echo "${PASSWORD}" | grep -q "^secret:"
+then
+    # Secret should be retrieved from Secret Manager. Get the secret for which cloudbuilder serviceaccount
+    # is authorized and create a new secret for which this project's Cloud Run serviceaccount is authorized.
+    secret_version=$(echo "${PASSWORD}" | cut -d: -f2-)
+    secret_value=$(gcloud secrets versions access "${secret_version}")
+    waf_secret_id="${PROJECT_ID}-securely-waf-password"
+
+    if gcloud secrets describe "${waf_secret_id}" --project="${PROJECT_ID}"
+    then
+        # Secret exists, check if value has changed and add new version if it did change
+        waf_secret_value=$(gcloud secrets versions access latest --secret="${waf_secret_id}" \
+            --project="${PROJECT_ID}")
+        if [ "${waf_secret_value}" != "${secret_value}" ]
+        then
+            echo "${secret_value}" | gcloud secrets versions add "${waf_secret_id}" \
+                --project="${PROJECT_ID}" --data-file=-
+        fi
+    else
+        # Secret does not yet exist, create it
+        echo "${secret_value}" | gcloud secrets create "${waf_secret_id}" --project="${PROJECT_ID}" --data-file=-
+        gcloud secrets add-iam-policy-binding "${waf_secret_id}" --project="${PROJECT_ID}" \
+            --member="serviceAccount:${cloud_run_service_account}" --role="roles/secretmanager.secretAccessor"
+    fi
+    waf_password="secret:projects/${PROJECT_ID}/secrets/${waf_secret_id}/versions/latest"
+else
+    waf_password="${PASSWORD}"
+fi
+
+echo "WAF password is ${waf_password}"
+exit 0
+
 # Deploy new revision of Cloud Run serverless WAF
 gcloud run deploy securely-waf \
     --quiet \
@@ -124,13 +161,14 @@ gcloud run deploy securely-waf \
     --allow-unauthenticated \
     --platform=managed \
     --memory=1024Mi \
+    --service-account="${cloud_run_service_account}" \
     --set-env-vars="^--^BACKEND=${BACKEND}" \
     --set-env-vars="^--^FQDN=${FQDN}" \
     --set-env-vars="${output_env_vars}" \
     --set-env-vars="SECURELY=true" \
     --set-env-vars="TLS=true" \
     --set-env-vars="USERNAME=${USERNAME}" \
-    --set-env-vars="PASSWORD=${PASSWORD}" \
+    --set-env-vars="PASSWORD=${waf_password}" \
     --set-env-vars="PARANOIA=${PARANOIA}" \
     --set-env-vars="SEC_RULE_ENGINE=${SEC_RULE_ENGINE}"
 
