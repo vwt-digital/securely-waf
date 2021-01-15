@@ -148,9 +148,6 @@ else
     waf_password="${PASSWORD}"
 fi
 
-echo "WAF password is ${waf_password}"
-exit 0
-
 # Deploy new revision of Cloud Run serverless WAF
 gcloud run deploy securely-waf \
     --quiet \
