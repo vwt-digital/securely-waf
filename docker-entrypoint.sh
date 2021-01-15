@@ -19,7 +19,8 @@ then
     echo "Getting password from ${secret_version}" &&
     scopes="https://www.googleapis.com/auth/cloud-platform" &&
     gcp_token=$(curl -H "Metadata-Flavor: Google" \
-      "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token?scopes=${scopes}") &&
+      "http://metadata/computeMetadata/v1/instance/service-accounts/default/token?scopes=${scopes}" |
+      python /gettoken.py) &&
     secret_value=$(curl -H "Authorization: Bearer ${gcp_token}" \
         "https://secretmanager.googleapis.com/v1/${secret_version}:access" | python /getsecret.py) &&
     export PASSWORD="${secret_value}" &&
