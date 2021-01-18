@@ -130,8 +130,13 @@ then
     if gcloud secrets describe "${waf_secret_id}" --project="${PROJECT_ID}"
     then
         # Secret exists, check if value has changed and add new version if it did change
-        waf_secret_value=$(gcloud secrets versions access latest --secret="${waf_secret_id}" \
-            --project="${PROJECT_ID}")
+        if [ -n "$(gcloud secrets versions list "${waf_secret_id}" --format='get(name)' --project="${PROJECT_ID}")" ]
+        then
+            waf_secret_value=$(gcloud secrets versions access latest --secret="${waf_secret_id}" \
+                --project="${PROJECT_ID}")
+        else
+            waf_secret_value=""
+        fi
         if [ "${waf_secret_value}" != "${secret_value}" ]
         then
             echo "${secret_value}" | gcloud secrets versions add "${waf_secret_id}" \
