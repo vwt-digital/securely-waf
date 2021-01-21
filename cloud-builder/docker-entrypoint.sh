@@ -14,11 +14,13 @@ function usage()
     [--paranoia=<paranoia>]
     [--sec_rule_engine=DetectionOnly|On]
     [--skip_domain_mapping]
+    [--use_gcp_iam_auth]
     [--additional_ca_cert=<ca-cert.crt>]"
 }
 
 if ! opts=$(getopt -l "project:,backend:,fqdn:,logstash_host:,organization:,grpc_url:,\
-username:,password:,paranoia::,sec_rule_engine::,skip_domain_mapping,additional_ca_cert::" -o "p:,b:,d:,l:,o:,g:,u:,w:,s" -- "${@}")
+username:,password:,paranoia::,sec_rule_engine::,use_gcp_iam_auth,skip_domain_mapping,additional_ca_cert::" \
+    -o "p:,b:,d:,l:,o:,g:,u:,w:,s,i" -- "${@}")
 then
     echo "Terminating..." >&2
     exit 1
@@ -49,6 +51,7 @@ do
         -u | --username ) USERNAME="${2}"; shift 2 ;;
         -w | --password ) PASSWORD="${2}"; shift 2 ;;
         -s | --skip_domain_mapping ) DO_DOMAIN_MAPPING=0; shift ;;
+        -i | --use_gcp_iam_auth ) USE_GCP_IAM_AUTH=TRUE; shift ;;
         --paranoia ) PARANOIA="${2}"; shift 2 ;;
         --sec_rule_engine ) SEC_RULE_ENGINE="${2}"; shift 2 ;;
         --additional_ca_cert ) ADDITIONAL_CA_CERT="${ADDITIONAL_CA_CERT} ${2}"; shift 2 ;;
@@ -153,6 +156,13 @@ else
     waf_password="${PASSWORD}"
 fi
 
+authentication_vars="USERNAME=${USERNAME},PASSWORD=${waf_password}"
+
+if [ -n "${USE_GCP_IAM_AUTH}" ]
+then
+    authentication_vars+=",USE_GCP_IAM_AUTH=true"
+fi
+
 # Deploy new revision of Cloud Run serverless WAF
 gcloud run deploy securely-waf \
     --quiet \
@@ -169,8 +179,7 @@ gcloud run deploy securely-waf \
     --set-env-vars="${output_env_vars}" \
     --set-env-vars="SECURELY=true" \
     --set-env-vars="TLS=true" \
-    --set-env-vars="USERNAME=${USERNAME}" \
-    --set-env-vars="PASSWORD=${waf_password}" \
+    --set-env-vars="${authentication_vars}" \
     --set-env-vars="PARANOIA=${PARANOIA}" \
     --set-env-vars="SEC_RULE_ENGINE=${SEC_RULE_ENGINE}"
 
