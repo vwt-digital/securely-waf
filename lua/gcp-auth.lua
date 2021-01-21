@@ -74,5 +74,13 @@ function authenticate(r)
 
     r.headers_in['X-Cloud-Authorization'] = jwt_cache[upstream].token
 
+    if os.getenv('USE_GCP_IAM_AUTH') ~= nil then
+        if r.headers_in['Authorization'] ~= nil then
+            r.headers_in['X-Orig-Auth'] = r.headers_in['Authorization']
+        end
+        r.headers_in['Authorization'] = r.headers_in['X-Cloud-Authorization']
+        print("DEBUG Using GCP IAM authorization to back-end")
+    end
+
     return apache2.DECLINED -- let the proxy handler do this instead
 end
