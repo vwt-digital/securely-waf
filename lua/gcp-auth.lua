@@ -7,36 +7,35 @@ local json = require("json")
 local metadataIdentity = "http://metadata/computeMetadata/v1/instance/service-accounts/default/identity"
 
 local jwt_cache = {} -- cache per upstream service
-local audience_cache = {}  -- cache per upstream service
 
 function split(str, sep)
-   local parts = {}
-   for m in str:gmatch('[^'..sep..']+') do
-     parts[#parts + 1] = m
-   end
-   return parts
+    local parts = {}
+    if str then
+        for m in str:gmatch('[^'..sep..']+') do
+            parts[#parts + 1] = m
+        end
+    end
+    return parts
 end
 
-function get_audience_map()
-    local backends = split(os.getenv('BACKEND'), ',')
+function create_audience_map()
+    local audiences = split(os.getenv('GCP_IAM_AUDIENCES'), ',')
     local fqdns = split(os.getenv('FQDN'), ',')
-    local audience_map = {}
+    local map = {}
     for i, k in pairs(fqdns) do
-        audience_map[k] = backends[i]
+        map[k] = audiences[i]
     end
-	return audience_map
+	return map
 end
+
+local audience_map = create_audience_map()
 
 function get_token(upstream)
     local response_body = {}
 
-    if next(audience_cache) == nil then
-        audience_cache = get_audience_map()
-    end
-    local audience = audience_cache[upstream]
+    local audience = audience_map[upstream]
 
     if audience == nil then
-        print('INFO Audience for ' .. upstream .. ' could not be determined')
         audience = upstream
     end
 
@@ -104,11 +103,16 @@ function authenticate(r)
 
     r.headers_in['X-Cloud-Authorization'] = jwt_cache[upstream].token
 
-    if os.getenv('USE_GCP_IAM_AUTH') ~= nil then
-        if r.headers_in['Authorization'] ~= nil then
-            r.headers_in['X-Orig-Auth'] = r.headers_in['Authorization']
+    if os.getenv('GCP_IAM_AUDIENCES') ~= nil then
+        if not audience_map[upstream] or audience_map[upstream] ~= '-' then
+            if r.headers_in['Authorization'] ~= nil then
+                r.headers_in['X-Orig-Auth'] = r.headers_in['Authorization']
+            end
+            r.headers_in['Authorization'] = 'Bearer ' .. r.headers_in['X-Cloud-Authorization']
+            print("DEBUG GCP IAM Auth header [" .. r.headers_in['Authorization'] .. "]")
+        else
+            print("DEBUG Disabled GCP IAM_AUTH for [" .. upstream .. "]")
         end
-        r.headers_in['Authorization'] = 'Bearer ' .. r.headers_in['X-Cloud-Authorization']
     end
 
     return apache2.DECLINED -- let the proxy handler do this instead
