@@ -175,7 +175,7 @@ gcloud run deploy securely-waf \
     --set-env-vars="SECURELY=true" \
     --set-env-vars="TLS=true" \
     --set-env-vars="${authentication_vars}" \
-    --set-env-vars="GCP_IAM_AUDIENCES=${GCP_IAM_AUDIENCES}" \
+    --set-env-vars="^--^GCP_IAM_AUDIENCES=${GCP_IAM_AUDIENCES}" \
     --set-env-vars="PARANOIA=${PARANOIA}" \
     --set-env-vars="SEC_RULE_ENGINE=${SEC_RULE_ENGINE}"
 
