@@ -7,18 +7,48 @@ local json = require("json")
 local metadataIdentity = "http://metadata/computeMetadata/v1/instance/service-accounts/default/identity"
 
 local jwt_cache = {} -- cache per upstream service
+local audience_cache = {}  -- cache per upstream service
+
+function split(str, sep)
+   local parts = {}
+   for m in str:gmatch('[^'..sep..']+') do
+     parts[#parts + 1] = m
+   end
+   return parts
+end
+
+function get_audience_map()
+    local backends = split(os.getenv('BACKEND'), ',')
+    local fqdns = split(os.getenv('FQDN'), ',')
+    local audience_map = {}
+    for i, k in pairs(fqdns) do
+        audience_map[k] = backends[i]
+    end
+	return audience_map
+end
 
 function get_token(upstream)
     local response_body = {}
 
+    if next(audience_cache) == nil then
+        audience_cache = get_audience_map()
+    end
+    local audience = audience_cache[upstream]
+
+    if audience == nil then
+        print('INFO Audience for ' .. upstream .. ' could not be determined')
+        audience = upstream
+    end
+
     http.request {
-        url = metadataIdentity .. "?audience=" .. urlhelper.urlencode(upstream),
+        url = metadataIdentity .. "?audience=" .. urlhelper.urlencode(audience),
         sink = ltn12.sink.table(response_body),
         headers = {
             ["Metadata-Flavor"] = "Google"
         }
     }
 
+    print('DEBUG GCP IAM token audience for [' .. upstream .. '] is [' .. audience .. ']')
     return table.concat(response_body)
 end
 
@@ -78,8 +108,7 @@ function authenticate(r)
         if r.headers_in['Authorization'] ~= nil then
             r.headers_in['X-Orig-Auth'] = r.headers_in['Authorization']
         end
-        r.headers_in['Authorization'] = r.headers_in['X-Cloud-Authorization']
-        print("DEBUG Using GCP IAM authorization to back-end")
+        r.headers_in['Authorization'] = 'Bearer ' .. r.headers_in['X-Cloud-Authorization']
     end
 
     return apache2.DECLINED -- let the proxy handler do this instead
