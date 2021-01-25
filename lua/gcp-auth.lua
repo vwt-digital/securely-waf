@@ -8,17 +8,46 @@ local metadataIdentity = "http://metadata/computeMetadata/v1/instance/service-ac
 
 local jwt_cache = {} -- cache per upstream service
 
+function split(str, sep)
+    local parts = {}
+    if str then
+        for m in str:gmatch('[^'..sep..']+') do
+            parts[#parts + 1] = m
+        end
+    end
+    return parts
+end
+
+function create_audience_map()
+    local audiences = split(os.getenv('GCP_IAM_AUDIENCES'), ',')
+    local fqdns = split(os.getenv('FQDN'), ',')
+    local map = {}
+    for i, k in pairs(fqdns) do
+        map[k] = audiences[i]
+    end
+	return map
+end
+
+local audience_map = create_audience_map()
+
 function get_token(upstream)
     local response_body = {}
 
+    local audience = audience_map[upstream]
+
+    if audience == nil then
+        audience = upstream
+    end
+
     http.request {
-        url = metadataIdentity .. "?audience=" .. urlhelper.urlencode(upstream),
+        url = metadataIdentity .. "?audience=" .. urlhelper.urlencode(audience),
         sink = ltn12.sink.table(response_body),
         headers = {
             ["Metadata-Flavor"] = "Google"
         }
     }
 
+    print('DEBUG GCP IAM token audience for [' .. upstream .. '] is [' .. audience .. ']')
     return table.concat(response_body)
 end
 
@@ -73,6 +102,17 @@ function authenticate(r)
     end
 
     r.headers_in['X-Cloud-Authorization'] = jwt_cache[upstream].token
+
+    if os.getenv('GCP_IAM_AUDIENCES') ~= nil then
+        if not audience_map[upstream] or audience_map[upstream] ~= '-' then
+            if r.headers_in['Authorization'] ~= nil then
+                r.headers_in['X-Orig-Auth'] = r.headers_in['Authorization']
+            end
+            r.headers_in['Authorization'] = 'Bearer ' .. r.headers_in['X-Cloud-Authorization']
+        else
+            print("DEBUG Disabled GCP IAM_AUTH for [" .. upstream .. "]")
+        end
+    end
 
     return apache2.DECLINED -- let the proxy handler do this instead
 end
