@@ -109,7 +109,6 @@ function authenticate(r)
                 r.headers_in['X-Orig-Auth'] = r.headers_in['Authorization']
             end
             r.headers_in['Authorization'] = 'Bearer ' .. r.headers_in['X-Cloud-Authorization']
-            print("DEBUG GCP IAM Auth header [" .. r.headers_in['Authorization'] .. "]")
         else
             print("DEBUG Disabled GCP IAM_AUTH for [" .. upstream .. "]")
         end
