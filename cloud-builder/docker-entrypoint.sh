@@ -156,7 +156,12 @@ else
     waf_password="${PASSWORD}"
 fi
 
-authentication_vars="USERNAME=${USERNAME},PASSWORD=${waf_password}"
+authentication_vars="^--^USERNAME=${USERNAME}--PASSWORD=${waf_password}"
+
+if [ -n "${GCP_IAM_AUDIENCES}" ]
+then
+    authentication_vars+="--GCP_IAM_AUDIENCES=${GCP_IAM_AUDIENCES}"
+fi
 
 # Deploy new revision of Cloud Run serverless WAF
 gcloud run deploy securely-waf \
@@ -175,7 +180,6 @@ gcloud run deploy securely-waf \
     --set-env-vars="SECURELY=true" \
     --set-env-vars="TLS=true" \
     --set-env-vars="${authentication_vars}" \
-    --set-env-vars="^--^GCP_IAM_AUDIENCES=${GCP_IAM_AUDIENCES}" \
     --set-env-vars="PARANOIA=${PARANOIA}" \
     --set-env-vars="SEC_RULE_ENGINE=${SEC_RULE_ENGINE}"
 
