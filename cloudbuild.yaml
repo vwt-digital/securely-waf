@@ -73,7 +73,6 @@ steps:
         done
 
 substitutions:
-  _LOGSTASH_HOST: ""
   _GRPC_URL: ""
   _ELASTIC_USERNAME: ""
   _ELASTIC_PASSWORD: ""
