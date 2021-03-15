@@ -1,4 +1,6 @@
 #!/bin/bash
+# enable job control
+set -m
 
 # Set default values if not set
 set -a
@@ -260,8 +262,8 @@ if [[ -v SECURELY ]]; then
     # arguments should be passed on
     exec "$@" $APACHE_ARGUMENTS -D FOREGROUND
   else
-    echo "Securely started, tailing access and error log:"
-    tail -f -n +1 "/var/log/apache2/access.log" "/var/log/apache2/error.log"
+    echo "Securely started and connected successfully."
+    fg
   fi
 else
   # shellcheck disable=SC2086
