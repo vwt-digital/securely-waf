@@ -38,4 +38,4 @@ RUN chown -R www-data /usr/local/bin/apache2/*
 COPY gettoken.py getsecret.py docker-entrypoint.sh /
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["apachectl", "-f", "/etc/apache2/conf/httpd.conf", "-D", "FOREGROUND"]
+CMD ["apachectl", "-f", "/etc/apache2/conf/httpd.conf"]

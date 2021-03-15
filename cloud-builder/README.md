@@ -43,6 +43,7 @@ The Cloud Build step to deploy the serverless Modsec can be added at the end of 
 ```
 This step will pull the securely-waf-source image from the container registry it was pushed to before and push it to the web applications project container registry. Thereafter, it will deploy the serverless Modsec to the project and route traffic to the specified fqdn to it.
 The parameters that can be passed to the cloud-builder-waf image:
+
 |Parameter|Required|Description|
 |---|---|---|
 |project|Yes|Project id of project deploying to|
