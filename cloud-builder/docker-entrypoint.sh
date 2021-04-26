@@ -14,12 +14,13 @@ function usage()
     [--paranoia=<paranoia>]
     [--sec_rule_engine=DetectionOnly|On]
     [--skip_domain_mapping]
+    [--function_memory=128MB|256MB|512MB|1024MB|2048MB|4096MB]
     [--gcp_iam_audiences=<comma-separated-list-of-audiences>]
     [--additional_ca_cert=<ca-cert.crt>]"
 }
 
 if ! opts=$(getopt -l "project:,backend:,fqdn:,logstash_host:,organization:,grpc_url:,\
-username:,password:,paranoia::,sec_rule_engine::,gcp_iam_audiences::,skip_domain_mapping,additional_ca_cert::" \
+username:,password:,paranoia::,sec_rule_engine::,function_memory::,gcp_iam_audiences::,skip_domain_mapping,additional_ca_cert::" \
     -o "p:,b:,d:,l:,o:,g:,u:,w:,s,i" -- "${@}")
 then
     echo "Terminating..." >&2
@@ -36,6 +37,10 @@ if [ -z "${SEC_RULE_ENGINE}" ]
 then
     SEC_RULE_ENGINE=DetectionOnly
 fi
+if [ -z "${FUNCTION_MEMORY}" ]
+then
+    FUNCTION_MEMORY=1024MB
+fi
 
 DO_DOMAIN_MAPPING=1
 
@@ -51,6 +56,7 @@ do
         -u | --username ) USERNAME="${2}"; shift 2 ;;
         -w | --password ) PASSWORD="${2}"; shift 2 ;;
         -s | --skip_domain_mapping ) DO_DOMAIN_MAPPING=0; shift ;;
+        --function_memory ) FUNCTION_MEMORY="${2}"; shift 2 ;;
         --gcp_iam_audiences ) GCP_IAM_AUDIENCES="${2}"; shift 2 ;;
         --paranoia ) PARANOIA="${2}"; shift 2 ;;
         --sec_rule_engine ) SEC_RULE_ENGINE="${2}"; shift 2 ;;
@@ -99,7 +105,7 @@ docker pull "${SECURELY_WAF_IMAGE_SOURCE}"
 if [ -n "${ADDITIONAL_CA_CERT}" ]
 then
     mkdir -p waf_with_ca_cert
-    cp ${ADDITIONAL_CA_CERT} waf_with_ca_cert/
+    cp "${ADDITIONAL_CA_CERT}" waf_with_ca_cert/
     pushd waf_with_ca_cert
     echo "FROM ${SECURELY_WAF_IMAGE_SOURCE}
 COPY ${ADDITIONAL_CA_CERT} /usr/local/share/ca-certificates/
@@ -172,7 +178,7 @@ gcloud run deploy securely-waf \
     --region=europe-west1 \
     --allow-unauthenticated \
     --platform=managed \
-    --memory=1024Mi \
+    --memory="${FUNCTION_MEMORY}" \
     --service-account="${cloud_run_service_account}" \
     --set-env-vars="^--^BACKEND=${BACKEND}" \
     --set-env-vars="^--^FQDN=${FQDN}" \
