@@ -105,7 +105,10 @@ docker pull "${SECURELY_WAF_IMAGE_SOURCE}"
 if [ -n "${ADDITIONAL_CA_CERT}" ]
 then
     mkdir -p waf_with_ca_cert
-    cp "${ADDITIONAL_CA_CERT}" waf_with_ca_cert/ | xargs
+    echo "AD C CRT '${ADDITIONAL_CA_CERT}'"
+    ADDITIONAL_CA_CERT="$(echo -e "${ADDITIONAL_CA_CERT}" | tr -d '[:space:]')"
+    echo "AD C CRT '${ADDITIONAL_CA_CERT}'"
+    cp "${ADDITIONAL_CA_CERT}" waf_with_ca_cert/
     pushd waf_with_ca_cert
     echo "FROM ${SECURELY_WAF_IMAGE_SOURCE}
 COPY ${ADDITIONAL_CA_CERT} /usr/local/share/ca-certificates/
