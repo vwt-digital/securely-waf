@@ -104,10 +104,11 @@ echo "Deploying securely-waf to ${PROJECT_ID}..."
 docker pull "${SECURELY_WAF_IMAGE_SOURCE}"
 if [ -n "${ADDITIONAL_CA_CERT}" ]
 then
+    if [ ! -f "$ADDITIONAL_CA_CERT" ]; then
+        echo "File '$ADDITIONAL_CA_CERT' cannot be found."
+        exit 1
+    fi
     mkdir -p waf_with_ca_cert
-    echo "AD C CRT '${ADDITIONAL_CA_CERT}'"
-    ADDITIONAL_CA_CERT="$(echo -e "${ADDITIONAL_CA_CERT}" | tr -d '[:space:]')"
-    echo "AD C CRT '${ADDITIONAL_CA_CERT}'"
     cp "${ADDITIONAL_CA_CERT}" waf_with_ca_cert/
     pushd waf_with_ca_cert
     echo "FROM ${SECURELY_WAF_IMAGE_SOURCE}
