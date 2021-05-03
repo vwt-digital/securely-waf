@@ -104,8 +104,10 @@ echo "Deploying securely-waf to ${PROJECT_ID}..."
 docker pull "${SECURELY_WAF_IMAGE_SOURCE}"
 if [ -n "${ADDITIONAL_CA_CERT}" ]
 then
-    if [ ! -f "$ADDITIONAL_CA_CERT" ]; then
-        echo "File '$ADDITIONAL_CA_CERT' cannot be found."
+    # shellcheck disable=SC2001
+    ADDITIONAL_CA_CERT=$(echo "${ADDITIONAL_CA_CERT}" | sed -e "s/^[[:space:]]*//")
+    if [ ! -f "${ADDITIONAL_CA_CERT}" ]; then
+        echo "File '${ADDITIONAL_CA_CERT}' cannot be found."
         exit 1
     fi
     mkdir -p waf_with_ca_cert
