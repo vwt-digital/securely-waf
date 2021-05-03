@@ -60,7 +60,7 @@ do
         --gcp_iam_audiences ) GCP_IAM_AUDIENCES="${2}"; shift 2 ;;
         --paranoia ) PARANOIA="${2}"; shift 2 ;;
         --sec_rule_engine ) SEC_RULE_ENGINE="${2}"; shift 2 ;;
-        --additional_ca_cert ) ADDITIONAL_CA_CERT="${2}"; shift 2 ;;
+        --additional_ca_cert ) ADDITIONAL_CA_CERT="${ADDITIONAL_CA_CERT} ${2}"; shift 2 ;;
         -- ) break ;;
         *) echo "Unrecognized argument ${1}"
            usage
